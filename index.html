@@ -195,6 +195,21 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 .perceived small { font-size: var(--fs-note); color: var(--muted); }
 .perceived strong { font-size: 22px; line-height: 1.35; }
 .perceived span { font-size: var(--fs-note); color: var(--muted); }
+.see-main { display: flex; flex-direction: column; gap: 14px; }
+.attrs { margin: 0; display: grid; gap: 10px; }
+.attr { display: grid; grid-template-columns: 3em 1fr; gap: 2px 10px; align-items: center; }
+.attr dt { font-weight: 700; font-size: var(--fs-note); grid-row: span 2; align-self: start; padding-top: 1px; }
+.attr dd { margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.attr dd b { font-size: var(--fs-body); }
+.attr .num { font-family: var(--font-data); font-size: var(--fs-note); color: var(--muted); font-variant-numeric: tabular-nums; }
+.attr .hint { font-size: 12px; color: var(--muted); }
+.mini { flex: 1; height: 10px; border-radius: 3px; border: 1px solid var(--line); position: relative; overflow: hidden; max-width: 180px; }
+.mini i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; transition: width .18s ease; }
+.mini.sat { background: var(--paper); }
+.mini.sat i { background: var(--ink); opacity: .75; }
+.mini.val { background: linear-gradient(90deg, #111, #fff); }
+.mini.val i { background: none; border-right: 3px solid #e2483d; box-shadow: 1px 0 0 #fff; }
+.seen-why { margin: 0; font-size: var(--fs-note); color: var(--muted); }
 .wheel-wrap { position: relative; width: 100%; max-width: 330px; margin: 0 auto; padding: 30px; }
 #wheel { display: block; width: 100%; height: auto; aspect-ratio: 1; max-width: 100%; }
 .pole { position: absolute; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; }
@@ -318,20 +333,40 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     <section class="panel p-see" aria-labelledby="h-see">
       <div class="step"><span class="n">4</span><h2 id="h-see">色として見える</h2><small>知覚</small></div>
       <div class="see-body">
+       <div class="see-main">
         <div class="swatch-row">
           <div class="swatch" id="swatch" role="img" aria-label="見えている色"></div>
           <div class="perceived">
             <small id="seenFor">3色覚での見え方</small>
             <strong id="seenName">—</strong>
-            <span id="seenWhy"></span>
+            <span id="catNote"></span>
           </div>
         </div>
+        <dl class="attrs">
+          <div class="attr">
+            <dt>色相</dt>
+            <dd><b id="aHue">—</b><span class="num" id="aHueNum"></span></dd>
+            <dd class="hint">色の円での ● の方向</dd>
+          </div>
+          <div class="attr">
+            <dt>彩度</dt>
+            <dd><span class="mini sat"><i id="aSatBar"></i></span><span class="num" id="aSat"></span></dd>
+            <dd class="hint">中心から ● までの距離</dd>
+          </div>
+          <div class="attr">
+            <dt>明度</dt>
+            <dd><span class="mini val"><i id="aValBar"></i></span><span class="num" id="aVal"></span></dd>
+            <dd class="hint">明るさのチャンネル（L＋M）から求めた値。0＝黒、10＝白</dd>
+          </div>
+        </dl>
+        <p class="seen-why" id="seenWhy"></p>
+       </div>
         <div>
           <div class="wheel-wrap">
             <canvas id="wheel" width="600" height="600" aria-label="反対色の平面。横軸が赤－緑、縦軸が黄－青"></canvas>
             <span class="pole y">黄</span><span class="pole b">青</span><span class="pole r">赤</span><span class="pole g">緑</span>
           </div>
-          <p class="wheel-cap">横軸 L−M、縦軸 S−(L＋M)。● が今の観察点、小さな文字は各原色・混色の位置。</p>
+          <p class="wheel-cap">横軸 L−M、縦軸 S−(L＋M)。● が今の観察点、中心の弧が色相の角度（赤の方向が 0°）、点線の円が彩度。小さな文字は各原色・混色の位置。</p>
         </div>
       </div>
     </section>
@@ -369,6 +404,18 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
         <span class="kw">段階説</span>
         <h3>三色説と反対色説は両方正しい</h3>
         <p>網膜の入口では 3 種類の錐体が働き（ヤング・ヘルムホルツの三色説）、その先の細胞で反応の差と和がとられて「赤↔緑」「黄↔青」「白↔黒」の対になります（ヘリングの反対色説）。この 2 段階をつなげた考え方が段階説です。</p>
+      </article>
+      <article class="card">
+        <span class="kw">三属性と色名</span>
+        <h3>反対色の信号は、色相・彩度・明度として読める</h3>
+        <p>反対色の信号は、さらに脳の後段で色として表されます。ステップ4の色の円で読むと、次のように対応します。</p>
+        <ul>
+          <li>色相：● の方向（2本の反対色チャンネルの比率）</li>
+          <li>彩度：中心から ● までの距離（色みの強さ）</li>
+          <li>明度：明るさのチャンネル（L＋M）</li>
+        </ul>
+        <p>連続した色は最後に「赤」「青」のような色名のカテゴリーに分けられます。多くの言語に共通する基本色彩語は 11 語（白・黒・赤・緑・黄・青・茶・紫・ピンク・オレンジ・灰）。カテゴリーの境目をまたぐ色の差は見分けやすく、これをカテゴリカル知覚と呼びます。色覚が異なる人と情報を共有するときに色名を添えるのは、このカテゴリーが共通の手がかりになるからです。</p>
+        <button type="button" class="link" data-goto="GB">緑＋青（水色）に照準を置く</button>
       </article>
       <article class="card">
         <span class="kw">色覚の多様性</span>
@@ -577,8 +624,21 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     const rgb = toRGB(...lmsSim);
     $('swatch').style.backgroundColor = `rgb(${rgb.map(encByte).join(',')})`;
     $('seenFor').textContent = MODE_NAME[mode] + (age > 20 ? `・${age}歳` : '') + 'での見え方';
-    $('seenName').textContent = describe(ch);
-    $('seenWhy').textContent = dark ? '' : why(ch);
+    // three attributes + colour category
+    const ax = ch.rg * K, ay = -ch.yb, rad = Math.hypot(ax, ay);
+    const hue = (Math.atan2(ay, ax) * 180 / Math.PI + 360) % 360;
+    const V = valueOf(ch.lum);
+    const achro = dark || rad < ACHRO;
+    $('aHue').textContent = achro ? 'なし（無彩色）' : hueWord(hue);
+    $('aHueNum').textContent = achro ? '' : Math.round(hue) + '°';
+    $('aSatBar').style.width = Math.min(100, rad * 100) + '%';
+    $('aSat').textContent = rad.toFixed(2);
+    $('aValBar').style.width = (V * 10) + '%';
+    $('aVal').textContent = 'V ' + V.toFixed(1);
+    const cat = categorize(hue, rad, V, dark);
+    $('seenName').textContent = cat.name;
+    $('catNote').textContent = cat.note;
+    $('seenWhy').textContent = dark ? '' : `反対色では「${describe(ch)}」。${why(ch)}`;
 
     drawWheel(ch);
   }
@@ -591,6 +651,41 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     if (!a || !b) return (a || b).w;
     const [hi, lo] = a.m >= b.m ? [a, b] : [b, a];
     return hi.w + '＋' + (lo.m < hi.m * 0.5 ? 'やや' : '') + lo.w;
+  }
+  // Munsell-like value from the luminance channel (via CIE L*)
+  function valueOf(Y) {
+    if (Y <= 0) return 0;
+    const f = Y > 0.008856 ? Math.cbrt(Y) : 7.787 * Y + 16 / 116;
+    return Math.max(0, Math.min(10, (116 * f - 16) / 10));
+  }
+  // hue angle on the wheel: 赤 0°, 黄 90°, 緑 180°, 青 270°
+  function hueWord(deg) {
+    const poles = ['赤', '黄', '緑', '青'];
+    const i = Math.floor(deg / 90) % 4, a = poles[i], b = poles[(i + 1) % 4], t = (deg % 90) / 90;
+    if (t < 0.15) return a + 'の方向';
+    if (t > 0.85) return b + 'の方向';
+    if (t > 0.4 && t < 0.6) return `${a}と${b}の中間`;
+    return t < 0.5 ? `${b}寄りの${a}` : `${a}寄りの${b}`;
+  }
+  // sectors calibrated so the display primaries land in the expected names
+  // (R≈18°, Y≈79°, G≈121°, C≈198°, B≈259°, M≈301°)
+  const ACHRO = 0.08;
+  const SECTORS = [
+    [32, '赤'], [62, '橙'], [98, '黄'], [115, '黄緑'], [175, '緑'],
+    [210, '青緑'], [275, '青'], [300, '紫'], [345, '赤紫'], [360, '赤'],
+  ];
+  const BORDER = { '黄緑': '緑と黄の境目', '青緑': '緑と青の境目', '赤紫': '紫とピンクの境目' };
+  function categorize(hue, rad, V, dark) {
+    const basic = n => ({ name: n, note: `基本色彩語（11語）の「${n}」に入る色` });
+    if (dark || V < 1.5) return basic('黒');
+    if (rad < ACHRO) return basic(V >= 8.5 ? '白' : V < 2.5 ? '黒' : '灰');
+    let n = SECTORS.find(s => hue < s[0])[1];
+    if ((n === '橙' || n === '黄') && V < 4.5) return basic('茶');
+    if ((n === '赤' || n === '赤紫') && V >= 7 && rad < 0.35) return basic('ピンク');
+    if ((n === '青緑' || n === '青') && V >= 7) return { name: '水色', note: '基本色彩語では「青」の仲間。日本語では独立した色名として使われることが多い' };
+    const pre = V < 3 ? '暗い' : rad < 0.18 ? (V >= 6 ? 'うすい' : '灰みの') : '';
+    if (BORDER[n]) return { name: pre + n, note: `基本色彩語では${BORDER[n]}。境目をまたぐ色の差は見分けやすい（カテゴリカル知覚）` };
+    return { name: pre + n, note: `基本色彩語（11語）の「${n === '橙' ? 'オレンジ' : n}」に入る色` };
   }
   function why({ rg, yb }) {
     const p = [];
@@ -639,6 +734,23 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     wctx.drawImage(base, 0, 0);
     if (ch.lum < 0.01) return;
     const [x, y] = wpos(ch);
+    const c0 = WS / 2, rr = Math.hypot(x - c0, y - c0);
+    const th = Math.atan2(-(y - c0), x - c0);
+    // saturation: dashed circle through the point
+    wctx.setLineDash([8, 8]);
+    wctx.strokeStyle = 'rgba(255,255,255,.9)'; wctx.lineWidth = 3;
+    wctx.beginPath(); wctx.arc(c0, c0, rr, 0, Math.PI * 2); wctx.stroke();
+    wctx.strokeStyle = 'rgba(0,0,0,.6)'; wctx.lineWidth = 1.5;
+    wctx.beginPath(); wctx.arc(c0, c0, rr, 0, Math.PI * 2); wctx.stroke();
+    wctx.setLineDash([]);
+    // hue: arc from the red axis (0°) to the point's direction
+    if (rr > 20) {
+      const ra = Math.min(56, rr * 0.6);
+      wctx.strokeStyle = '#111'; wctx.lineWidth = 7;
+      wctx.beginPath(); wctx.arc(c0, c0, ra, 0, -(th < 0 ? th + Math.PI * 2 : th), true); wctx.stroke();
+      wctx.strokeStyle = '#fff'; wctx.lineWidth = 3;
+      wctx.beginPath(); wctx.arc(c0, c0, ra, 0, -(th < 0 ? th + Math.PI * 2 : th), true); wctx.stroke();
+    }
     wctx.strokeStyle = '#fff'; wctx.lineWidth = 4;
     wctx.beginPath(); wctx.moveTo(WS / 2, WS / 2); wctx.lineTo(x, y); wctx.stroke();
     wctx.strokeStyle = '#111'; wctx.lineWidth = 2;
