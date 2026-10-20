@@ -1,0 +1,671 @@
+<title>光と反対色ラボ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&family=Dela+Gothic+One&display=swap">
+<style>
+/* Layout: 教科書の「ステップ図」を横に展開。光 → 錐体 → 反対色 → 知覚 を左から右へ。暗室ステージだけは常に黒。 */
+:root {
+  --paper: #eceff3;
+  --surface: #f8f9fb;
+  --ink: #1a2030;
+  --muted: #5a6275;
+  --line: #d2d7e0;
+  --accent: #c2335a;
+  --cone-l: #d3333e;
+  --cone-m: #198a4c;
+  --cone-s: #2c5bcc;
+  --stage: #040507;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-data: "BIZ UDGothic", "Hiragino Sans", "Osaka-Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #111319;
+    --surface: #1a1d25;
+    --ink: #e7e9ef;
+    --muted: #9ba2b3;
+    --line: #2d323d;
+    --accent: #f0698d;
+    --cone-l: #ff5f68;
+    --cone-m: #3fca7d;
+    --cone-s: #7193ff;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #111319;
+  --surface: #1a1d25;
+  --ink: #e7e9ef;
+  --muted: #9ba2b3;
+  --line: #2d323d;
+  --accent: #f0698d;
+  --cone-l: #ff5f68;
+  --cone-m: #3fca7d;
+  --cone-s: #7193ff;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+header { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 4.2vw, 40px); line-height: 1.25; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.toolbar .label { font-size: 13px; color: var(--muted); font-weight: 700; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button {
+  font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 0;
+  padding: 7px 12px; cursor: pointer; border-right: 1px solid var(--line);
+}
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); font-weight: 700; }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lab { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .lab { grid-template-columns: 1.1fr 1fr; } .p-see { grid-column: 1 / -1; } }
+@media (min-width: 1140px) { .lab { grid-template-columns: 1.15fr 1fr .95fr; } .p-see { grid-column: auto; } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.step { display: flex; align-items: baseline; gap: 10px; }
+.step .n { font-family: var(--font-display); color: var(--accent); font-size: 22px; line-height: 1; }
+.step h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.step small { color: var(--muted); font-size: 12px; }
+
+/* stage */
+.stage { position: relative; background: var(--stage); border-radius: 8px; overflow: hidden; }
+#stage { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; max-width: 100%; cursor: grab; touch-action: none; }
+#stage.dragging { cursor: grabbing; }
+.stage-hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: #a9b0c0; pointer-events: none; }
+.age { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.age input { width: 160px; max-width: 100%; accent-color: #c9a227; }
+.age output { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; min-width: 3.5em; }
+.lens { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.lens-chip { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #fff; box-shadow: inset 0 0 0 6px rgba(255,255,255,.35); }
+.lens strong { display: block; font-size: 13px; }
+.lens span { font-family: var(--font-data); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lens.aged span { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button {
+  font: inherit; font-size: 13px; cursor: pointer; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chips button .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(128,128,128,.5); }
+.chips button[aria-pressed="true"] { border-color: var(--ink); font-weight: 700; }
+.sliders { display: grid; gap: 6px; }
+.sl { display: grid; grid-template-columns: 7.5em 1fr 3.4em; align-items: center; gap: 10px; font-size: 13px; }
+.sl input { width: 100%; }
+.sl output { font-family: var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+#sR { accent-color: #e0303a; } #sG { accent-color: #1fa055; } #sB { accent-color: #2d5be0; }
+.probe-read { font-size: 13px; color: var(--muted); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* cones */
+.cones { display: grid; gap: 8px; }
+.cone { display: grid; grid-template-columns: 1.9em 1fr 3.4em; gap: 10px; align-items: center; }
+.tag { font-family: var(--font-data); font-weight: 700; color: #fff; border-radius: 4px; text-align: center; font-size: 13px; line-height: 1.6; }
+.tag.l { background: var(--cone-l); } .tag.m { background: var(--cone-m); } .tag.s { background: var(--cone-s); }
+.bar { height: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 3px; position: relative; overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; width: 0; transition: width .18s ease; }
+.bar.l i { background: var(--cone-l); } .bar.m i { background: var(--cone-m); } .bar.s i { background: var(--cone-s); }
+.bar.off { background: repeating-linear-gradient(45deg, var(--paper) 0 5px, var(--line) 5px 7px); }
+.bar.off i { display: none; }
+.cone output { font-family: var(--font-data); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+.cone-note { font-size: 12px; color: var(--muted); margin: 0; }
+.wire { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.wire::before, .wire::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* channels */
+.ch { display: grid; gap: 6px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.ch:first-of-type { border-top: 0; padding-top: 0; }
+.ch-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ch-name { font-weight: 700; font-size: 14px; }
+.formula { font-family: var(--font-data); font-size: 13px; display: inline-flex; gap: 4px; align-items: center; }
+.formula b { color: #fff; border-radius: 3px; padding: 0 5px; font-weight: 700; }
+.formula b.l { background: var(--cone-l); } .formula b.m { background: var(--cone-m); } .formula b.s { background: var(--cone-s); }
+.gauge { position: relative; height: 22px; border-radius: 4px; }
+.gauge.rg { background: linear-gradient(90deg, #ee6a5c, #c9c6bf 50%, #7fd27a); }
+.gauge.lum { background: linear-gradient(90deg, #ffffff, #8a8a8a 50%, #222); border: 1px solid var(--line); }
+.gauge.yb { background: linear-gradient(90deg, #e8bb2e, #c9c6bf 50%, #3d55c9); }
+.gauge::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); opacity: .6; }
+.gauge.lum::after { display: none; }
+.needle { position: absolute; top: -5px; bottom: -5px; width: 4px; margin-left: -2px; background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px var(--surface); transition: left .18s ease; left: 50%; }
+.poles { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.verdict { margin: 0; font-size: 13.5px; }
+.verdict b { font-family: var(--font-data); }
+.verdict.dead { color: var(--accent); }
+
+/* perception */
+.see-body { display: grid; gap: 16px; }
+@media (min-width: 760px) and (max-width: 1139px) { .see-body { grid-template-columns: 1fr 1fr; align-items: start; } }
+.swatch-row { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: center; }
+.swatch { width: 96px; height: 96px; border-radius: 8px; border: 1px solid var(--line); background: #000; transition: background-color .18s ease; }
+.perceived { display: flex; flex-direction: column; gap: 2px; }
+.perceived small { font-size: 12px; color: var(--muted); }
+.perceived strong { font-size: 20px; line-height: 1.35; }
+.perceived span { font-size: 13px; color: var(--muted); }
+.wheel-wrap { position: relative; width: 100%; max-width: 320px; margin: 0 auto; padding: 26px; }
+#wheel { display: block; width: 100%; height: auto; aspect-ratio: 1; max-width: 100%; }
+.pole { position: absolute; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; }
+.pole.y { top: 0; left: 50%; transform: translateX(-50%); background: #d7a51c; color: #1a1a1a; }
+.pole.b { bottom: 0; left: 50%; transform: translateX(-50%); background: #2f4cb8; }
+.pole.r { right: 0; top: 50%; transform: translateY(-50%); background: #d2402e; }
+.pole.g { left: 0; top: 50%; transform: translateY(-50%); background: #3a9b4a; }
+.wheel-cap { font-size: 12px; color: var(--muted); margin: 0; text-align: center; }
+
+/* notes */
+.notes h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0 0 4px; }
+.notes > p { margin: 0 0 14px; color: var(--muted); max-width: 64ch; }
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.card .kw { font-size: 11px; letter-spacing: .12em; color: var(--accent); font-weight: 700; }
+.card h3 { margin: 0; font-size: 16px; line-height: 1.45; text-wrap: balance; }
+.card p { margin: 0; font-size: 14px; }
+.card ul { margin: 0; padding-left: 1.2em; font-size: 14px; }
+.card button.link { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
+.foot { font-size: 12px; color: var(--muted); max-width: 80ch; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) { .bar i, .needle, .swatch { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">色彩検定 UC級 ／ 加法混色・反対色説・色覚の多様性</span>
+    <h1>光を重ねると、目の中で何が起きているか</h1>
+    <p class="lede">赤・緑・青の光を重ねて、観察点（白い照準）を動かしてください。その光に対する L・M・S 錐体の反応と、そこから作られる 3 つの反対色チャンネル、最終的に見える色が同時に変わります。</p>
+  </header>
+
+  <div class="toolbar">
+    <span class="label">色覚タイプ</span>
+    <div class="seg" role="group" aria-label="色覚タイプ" id="modes">
+      <button type="button" data-mode="C" aria-pressed="true">3色覚</button>
+      <button type="button" data-mode="P" aria-pressed="false">1型2色覚</button>
+      <button type="button" data-mode="D" aria-pressed="false">2型2色覚</button>
+      <button type="button" data-mode="T" aria-pressed="false">3型色覚</button>
+    </div>
+    <label class="age" for="age"><span class="label">年齢（水晶体の黄変）</span><input id="age" type="range" min="20" max="80" step="5" value="20"><output id="oAge">20歳</output></label>
+  </div>
+
+  <main class="lab">
+    <section class="panel p-light" aria-labelledby="h-light">
+      <div class="step"><span class="n">1</span><h2 id="h-light">光を重ねる</h2><small>同時加法混色</small></div>
+      <div class="stage">
+        <canvas id="stage" width="960" height="720" tabindex="0" aria-label="加法混色のステージ。光の円と観察点はドラッグ、観察点は矢印キーでも移動できます"></canvas>
+        <span class="stage-hint">円と照準はドラッグで動かせます</span>
+      </div>
+      <div class="chips" id="regions" aria-label="観察点を置く場所">
+        <button type="button" data-set="R"><span class="dot" style="background:#f00"></span>赤</button>
+        <button type="button" data-set="G"><span class="dot" style="background:#0f0"></span>緑</button>
+        <button type="button" data-set="B"><span class="dot" style="background:#00f"></span>青</button>
+        <button type="button" data-set="RG" aria-pressed="true"><span class="dot" style="background:#ff0"></span>赤＋緑</button>
+        <button type="button" data-set="GB"><span class="dot" style="background:#0ff"></span>緑＋青</button>
+        <button type="button" data-set="RB"><span class="dot" style="background:#f0f"></span>青＋赤</button>
+        <button type="button" data-set="RGB"><span class="dot" style="background:#fff"></span>3色すべて</button>
+      </div>
+      <div class="sliders">
+        <label class="sl" for="sR"><span>赤の光（R）</span><input id="sR" type="range" min="0" max="100" value="100"><output id="oR">100%</output></label>
+        <label class="sl" for="sG"><span>緑の光（G）</span><input id="sG" type="range" min="0" max="100" value="100"><output id="oG">100%</output></label>
+        <label class="sl" for="sB"><span>青の光（B）</span><input id="sB" type="range" min="0" max="100" value="100"><output id="oB">100%</output></label>
+      </div>
+      <div class="probe-read" id="probeRead">観察点の光 R — G — B —</div>
+    </section>
+
+    <section class="panel p-signal" aria-labelledby="h-cone">
+      <div class="step"><span class="n">2</span><h2 id="h-cone">水晶体を通り、錐体が反応する</h2><small>網膜・三色説</small></div>
+      <div class="lens" id="lens">
+        <span class="lens-chip" id="lensChip" role="img" aria-label="水晶体の色"></span>
+        <div><strong id="lensTitle">水晶体（20歳）：ほぼ透明</strong><span id="lensRead">網膜に届く光　L 100%・M 100%・S 100%</span></div>
+      </div>
+      <div class="cones">
+        <div class="cone"><span class="tag l">L</span><div class="bar l" id="barL"><i></i></div><output id="vL">0.00</output></div>
+        <div class="cone"><span class="tag m">M</span><div class="bar m" id="barM"><i></i></div><output id="vM">0.00</output></div>
+        <div class="cone"><span class="tag s">S</span><div class="bar s" id="barS"><i></i></div><output id="vS">0.00</output></div>
+      </div>
+      <p class="cone-note" id="coneNote">L＝長波長（赤寄り）、M＝中波長（緑寄り）、S＝短波長（青寄り）に感度が高い錐体。白い光で 1.00 になるように揃えています。</p>
+
+      <div class="wire">差と和をとる</div>
+
+      <div class="step"><span class="n">3</span><h2>反対色チャンネル</h2><small>網膜の細胞〜脳・反対色説</small></div>
+      <div class="ch">
+        <div class="ch-head"><span class="ch-name">赤－緑のチャンネル</span><span class="formula"><b class="l">L</b>−<b class="m">M</b></span></div>
+        <div class="gauge rg"><span class="needle" id="nRG"></span></div>
+        <div class="poles"><span>赤</span><span>緑</span></div>
+        <p class="verdict" id="tRG"></p>
+      </div>
+      <div class="ch">
+        <div class="ch-head"><span class="ch-name">明るさのチャンネル</span><span class="formula"><b class="l">L</b>＋<b class="m">M</b></span></div>
+        <div class="gauge lum"><span class="needle" id="nLum"></span></div>
+        <div class="poles"><span>白</span><span>黒</span></div>
+        <p class="verdict" id="tLum"></p>
+      </div>
+      <div class="ch">
+        <div class="ch-head"><span class="ch-name">黄－青のチャンネル</span><span class="formula"><b class="s">S</b>−(<b class="l">L</b>＋<b class="m">M</b>)</span></div>
+        <div class="gauge yb"><span class="needle" id="nYB"></span></div>
+        <div class="poles"><span>黄</span><span>青</span></div>
+        <p class="verdict" id="tYB"></p>
+      </div>
+    </section>
+
+    <section class="panel p-see" aria-labelledby="h-see">
+      <div class="step"><span class="n">4</span><h2 id="h-see">色として見える</h2><small>知覚</small></div>
+      <div class="see-body">
+        <div class="swatch-row">
+          <div class="swatch" id="swatch" role="img" aria-label="見えている色"></div>
+          <div class="perceived">
+            <small id="seenFor">3色覚での見え方</small>
+            <strong id="seenName">—</strong>
+            <span id="seenWhy"></span>
+          </div>
+        </div>
+        <div>
+          <div class="wheel-wrap">
+            <canvas id="wheel" width="600" height="600" aria-label="反対色の平面。横軸が赤－緑、縦軸が黄－青"></canvas>
+            <span class="pole y">黄</span><span class="pole b">青</span><span class="pole r">赤</span><span class="pole g">緑</span>
+          </div>
+          <p class="wheel-cap">横軸 L−M、縦軸 S−(L＋M)。● が今の観察点、小さな文字は各原色・混色の位置。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="notes" aria-labelledby="h-notes">
+    <h2 id="h-notes">UCアドバイザーの読み解き</h2>
+    <p>試験で問われやすい点と、このラボのどこを触れば確かめられるかをまとめています。</p>
+    <div class="cards">
+      <article class="card">
+        <span class="kw">加法混色</span>
+        <h3>光は重ねるほど明るくなる</h3>
+        <ul>
+          <li>赤＋緑＝黄（イエロー）</li>
+          <li>緑＋青＝シアン</li>
+          <li>青＋赤＝マゼンタ</li>
+          <li>赤＋緑＋青＝白</li>
+        </ul>
+        <p>ステージのように光を同じ場所に重ねるのが同時加法混色。ディスプレイのように細かい点を並べるのは並置加法混色、回転混色は継時加法混色です。</p>
+      </article>
+      <article class="card">
+        <span class="kw">黄の正体</span>
+        <h3>黄色の光が無くても黄は見える</h3>
+        <p>「赤＋緑」に照準を置くと、L と M が同じくらい反応し（L≈M で赤みも緑みも出ない）、S だけが小さくなります。S＜L＋M なので黄み。黄は「L・M が両方強く、S が弱い」という反応の組み合わせから生まれます。</p>
+        <button type="button" class="link" data-goto="RG">赤＋緑に照準を置く</button>
+      </article>
+      <article class="card">
+        <span class="kw">段階説</span>
+        <h3>三色説と反対色説は両方正しい</h3>
+        <p>網膜の入口では 3 種類の錐体が働き（ヤング・ヘルムホルツの三色説）、その先の細胞で反応の差と和がとられて「赤↔緑」「黄↔青」「白↔黒」の対になります（ヘリングの反対色説）。この 2 段階をつなげた考え方が段階説です。</p>
+      </article>
+      <article class="card">
+        <span class="kw">色覚の多様性</span>
+        <h3>1型2色覚・2型2色覚では赤－緑のチャンネルが働きにくい</h3>
+        <p>L か M のどちらかが無いと L−M の差が生まれず、赤と緑の区別が難しくなります。一方で明るさと黄－青のチャンネルは働くので、配色では明度差をつける、形や文字・模様を併用する、といった工夫が効きます。3型色覚では黄－青のチャンネルが働きにくくなります。</p>
+        <button type="button" class="link" data-mode-go="D">2型2色覚に切り替えて赤と緑を比べる</button>
+      </article>
+      <article class="card">
+        <span class="kw">加齢と黄変</span>
+        <h3>年をとると青い光が網膜に届きにくくなる</h3>
+        <p>水晶体は年齢とともに黄色く濁り（黄変）、波長の短い青い光を吸収するようになります。網膜の中心にある黄斑の色素も青い光を吸収します。その結果、色覚タイプは変わらなくても S錐体に届く光が減り、S−(L＋M) が黄み側にずれます。</p>
+        <ul>
+          <li>青は暗く、黒っぽく見える</li>
+          <li>白が黄みがかって見える</li>
+          <li>青と黒、青と紫、白と黄の区別がつきにくい</li>
+        </ul>
+        <p>脳は時間をかけて順応するので、本人は白を白と感じやすくなります。それでも青側の色の差は小さいままなので、高齢者向けの案内では、青と黒の組み合わせを避ける、明度差を大きくする、といった配慮が必要です。白内障では、この変化がさらに大きくなります。</p>
+        <button type="button" class="link" data-age-go="80">80歳にして青の光を見る</button>
+      </article>
+    </div>
+  </section>
+
+  <p class="foot">モデルについて：錐体反応は表示色（sRGB）から LMS への変換（Smith–Pokorny 系の行列）、色覚シミュレーションは Viénot・Brettel・Mollon（1999）の近似を使っています。加齢の効果は、水晶体と黄斑色素による吸収が増える分を、20歳を基準にした L・M・S ごとの透過率（80歳で S が約 4 割）として目安で入れたもので、順応はかけていません。チャンネルは白で L＝M＝S＝1 となるよう正規化し、明るさは (L＋M)/2、黄－青は S−(L＋M)/2 として計算しました。学習用の簡略モデルなので、実際の見え方には個人差があります。</p>
+</div>
+
+<script>
+(() => {
+  // ---- color math ----
+  const DEC = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { const c = i / 255; DEC[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  const enc = v => { v = Math.min(1, Math.max(0, v)); return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; };
+  const ENC = new Uint8ClampedArray(4096);
+  for (let i = 0; i < 4096; i++) ENC[i] = Math.round(enc(i / 4095) * 255);
+  const encByte = v => ENC[Math.max(0, Math.min(4095, (v * 4095) | 0))];
+
+  const toLMS = (r, g, b) => [
+    17.8824 * r + 43.5161 * g + 4.11935 * b,
+    3.45565 * r + 27.1554 * g + 3.86714 * b,
+    0.0299566 * r + 0.184309 * g + 1.46709 * b,
+  ];
+  const toRGB = (L, M, S) => [
+    0.0809444479 * L - 0.130504409 * M + 0.116721066 * S,
+    -0.0102485335 * L + 0.0540193266 * M - 0.113614708 * S,
+    -0.000365296938 * L - 0.00412161469 * M + 0.693511405 * S,
+  ];
+  const simulate = (lms, mode) => {
+    const [L, M, S] = lms;
+    if (mode === 'P') return [2.02344 * M - 2.52581 * S, M, S];
+    if (mode === 'D') return [L, 0.494207 * L + 1.24827 * S, S];
+    if (mode === 'T') return [L, M, -0.395913 * L + 0.801109 * M];
+    return lms;
+  };
+  // Extra optical density of the yellowing lens (+ macular pigment) relative to age 20.
+  // Short wavelengths are absorbed most, so S loses far more than M or L.
+  let age = 20;
+  const ageFactors = a => {
+    const dS = 0.0045 * Math.max(0, a - 20) + 0.008 * Math.max(0, a - 60);
+    return [Math.pow(10, -dS * 0.04), Math.pow(10, -dS * 0.15), Math.pow(10, -dS)];
+  };
+  let AGE_F = ageFactors(age);
+  const applyAge = lms => [lms[0] * AGE_F[0], lms[1] * AGE_F[1], lms[2] * AGE_F[2]];
+  const WHITE = toLMS(1, 1, 1);
+  const channels = lms => {
+    const n = [lms[0] / WHITE[0], lms[1] / WHITE[1], lms[2] / WHITE[2]];
+    const lum = (n[0] + n[1]) / 2;
+    return { n, rg: n[0] - n[1], lum, yb: n[2] - lum };
+  };
+  const K = 3;          // L−M is small; stretch it for gauges and the wheel
+  const T_RG = 0.06, T_YB = 0.05;
+
+  // ---- state ----
+  const W0 = 480, H0 = 360, S = 2, RAD = 110;
+  const circles = [
+    { key: 'R', x: 190, y: 150, c: [1, 0, 0] },
+    { key: 'G', x: 290, y: 150, c: [0, 1, 0] },
+    { key: 'B', x: 240, y: 235, c: [0, 0, 1] },
+  ];
+  const I = [1, 1, 1];
+  const probe = { x: 240, y: 98 };
+  let mode = 'C';
+  let activeSet = 'RG';
+  const MODE_NAME = { C: '3色覚', P: '1型2色覚', D: '2型2色覚', T: '3型色覚' };
+  const MISSING = { P: 0, D: 1, T: 2 };
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), ctx = stage.getContext('2d', { willReadFrequently: true });
+
+  function draw() {
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W0, H0);
+    ctx.globalCompositeOperation = 'lighter';
+    circles.forEach((c, i) => {
+      const v = enc(I[i]);
+      const col = c.c.map(k => Math.round(k * v * 255)).join(',');
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, RAD);
+      g.addColorStop(0, `rgba(${col},1)`);
+      g.addColorStop(0.84, `rgba(${col},1)`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(c.x, c.y, RAD, 0, Math.PI * 2); ctx.fill();
+    });
+
+    const px = ctx.getImageData(Math.round(probe.x * S), Math.round(probe.y * S), 1, 1).data;
+    const lin = [DEC[px[0]], DEC[px[1]], DEC[px[2]]];
+
+    if (mode !== 'C' || age > 20) {
+      const img = ctx.getImageData(0, 0, stage.width, stage.height), d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] === 0 && d[i + 1] === 0 && d[i + 2] === 0) continue;
+        const rgb = toRGB(...simulate(applyAge(toLMS(DEC[d[i]], DEC[d[i + 1]], DEC[d[i + 2]])), mode));
+        d[i] = encByte(rgb[0]); d[i + 1] = encByte(rgb[1]); d[i + 2] = encByte(rgb[2]);
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    // light labels
+    const cx = circles.reduce((a, c) => a + c.x, 0) / 3, cy = circles.reduce((a, c) => a + c.y, 0) / 3;
+    ctx.font = '700 15px "BIZ UDGothic", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    circles.forEach(c => {
+      let dx = c.x - cx, dy = c.y - cy; const len = Math.hypot(dx, dy) || 1;
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      const lx = c.x + dx / len * RAD * 0.62, ly = c.y + dy / len * RAD * 0.62;
+      ctx.beginPath(); ctx.arc(lx, ly, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(c.key, lx, ly + 1);
+    });
+    // probe
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)';
+    ctx.beginPath(); ctx.arc(probe.x, probe.y, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = '#fff';
+    ctx.beginPath(); ctx.arc(probe.x, probe.y, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    [[-17, 0, -12, 0], [12, 0, 17, 0], [0, -17, 0, -12], [0, 12, 0, 17]].forEach(([a, b, c2, d2]) => {
+      ctx.moveTo(probe.x + a, probe.y + b); ctx.lineTo(probe.x + c2, probe.y + d2);
+    });
+    ctx.stroke();
+
+    analyse(lin);
+  }
+
+  // ---- readouts ----
+  const pct = v => Math.round(v * 100) + '%';
+  const f2 = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
+  const clamp1 = v => Math.max(-1, Math.min(1, v));
+
+  function analyse(lin) {
+    $('probeRead').textContent = `観察点に届いている光　R ${pct(lin[0])}　G ${pct(lin[1])}　B ${pct(lin[2])}`;
+    const young = channels(toLMS(...lin));
+    const lmsRetina = applyAge(toLMS(...lin));
+    const lmsSim = simulate(lmsRetina, mode);
+    const real = channels(lmsRetina);
+    const ch = channels(lmsSim);
+
+    // lens
+    const lensRGB = toRGB(...applyAge(WHITE)).map(v => Math.max(0, v));
+    const lm = Math.max(...lensRGB);
+    $('lensChip').style.backgroundColor = `rgb(${lensRGB.map(v => encByte(v / lm)).join(',')})`;
+    $('lens').classList.toggle('aged', age > 20);
+    $('lensTitle').textContent = `水晶体（${age}歳）：` + (age <= 30 ? 'ほぼ透明' : age <= 50 ? 'わずかに黄変' : age <= 65 ? '黄変が進む' : 'はっきり黄変');
+    $('lensRead').textContent = `網膜に届く光　L ${pct(AGE_F[0])}・M ${pct(AGE_F[1])}・S ${pct(AGE_F[2])}`;
+
+    // cones: show the real cone signals; a missing cone is shown as absent
+    ['L', 'M', 'S'].forEach((k, i) => {
+      const bar = $('bar' + k), off = MISSING[mode] === i;
+      bar.classList.toggle('off', off);
+      bar.firstElementChild.style.width = Math.min(100, real.n[i] * 100) + '%';
+      $('v' + k).textContent = off ? 'なし' : real.n[i].toFixed(2);
+    });
+    let note = mode === 'C'
+      ? 'L＝長波長（赤寄り）、M＝中波長（緑寄り）、S＝短波長（青寄り）に感度が高い錐体。20歳の目で白い光を見たとき 1.00 になるように揃えています。'
+      : `${MODE_NAME[mode]}では ${'LMS'[MISSING[mode]]} 錐体が働かない（または働きが弱い）ため、残りの錐体の反応だけで色を判断します。`;
+    if (age > 20 && young.n[2] > 0.02) note += ` 黄変した水晶体が青い光を吸収するため、S の反応は 20歳の ${young.n[2].toFixed(2)} から ${real.n[2].toFixed(2)} に下がっています。`;
+    $('coneNote').textContent = note;
+
+    // gauges (book orientation: 赤|緑, 白|黒, 黄|青)
+    $('nRG').style.left = (50 - clamp1(ch.rg * K) * 50) + '%';
+    $('nLum').style.left = (100 - Math.min(1, ch.lum) * 100) + '%';
+    $('nYB').style.left = (50 + clamp1(ch.yb) * 50) + '%';
+
+    const dark = ch.lum < 0.01;
+    const rgEl = $('tRG');
+    const rgDead = (mode === 'P' || mode === 'D') && Math.abs(real.rg) >= T_RG && Math.abs(ch.rg) < T_RG;
+    rgEl.classList.toggle('dead', rgDead);
+    rgEl.innerHTML = dark ? '光がないので反応なし'
+      : Math.abs(ch.rg) < T_RG ? '<b>L ≈ M</b> → 赤みも緑みも出ない'
+      : ch.rg > 0 ? '<b>L ＞ M</b> → 赤みが強くなる' : '<b>L ＜ M</b> → 緑みが強くなる';
+    if (rgDead) rgEl.innerHTML += `（3色覚なら${real.rg > 0 ? '赤み' : '緑み'}が出る差が、${'LM'[MISSING[mode]]}錐体が無いため生まれない）`;
+
+    $('tLum').innerHTML = dark ? '光がないので黒' : `<b>L＋M = ${(ch.lum * 2).toFixed(2)}</b> → ${ch.lum > 0.75 ? 'とても明るい' : ch.lum > 0.35 ? '中くらいの明るさ' : '暗め'}`;
+
+    const ybEl = $('tYB');
+    const ybDead = mode === 'T' && Math.abs(real.yb) >= T_YB && Math.abs(ch.yb) < T_YB;
+    ybEl.classList.toggle('dead', ybDead);
+    ybEl.innerHTML = dark ? '光がないので反応なし'
+      : Math.abs(ch.yb) < T_YB ? '<b>S ≈ L＋M</b> → 黄みも青みも出ない'
+      : ch.yb > 0 ? '<b>S ＞ L＋M</b> → 青みが強くなる' : '<b>S ＜ L＋M</b> → 黄みが強くなる';
+    if (ybDead) ybEl.innerHTML += '（S錐体が無いため差が生まれない）';
+    else if (age > 20 && !dark && young.yb - ch.yb > 0.04) ybEl.innerHTML += `（20歳の目より黄み側へ ${(young.yb - ch.yb).toFixed(2)} ずれている）`;
+
+    // perceived
+    const rgb = toRGB(...lmsSim);
+    $('swatch').style.backgroundColor = `rgb(${rgb.map(encByte).join(',')})`;
+    $('seenFor').textContent = MODE_NAME[mode] + (age > 20 ? `・${age}歳` : '') + 'での見え方';
+    $('seenName').textContent = describe(ch);
+    $('seenWhy').textContent = dark ? '' : why(ch);
+
+    drawWheel(ch);
+  }
+
+  function describe({ rg, yb, lum }) {
+    if (lum < 0.01) return '黒';
+    const a = Math.abs(rg) >= T_RG ? { w: rg > 0 ? '赤み' : '緑み', m: Math.abs(rg) * K } : null;
+    const b = Math.abs(yb) >= T_YB ? { w: yb > 0 ? '青み' : '黄み', m: Math.abs(yb) } : null;
+    if (!a && !b) return lum > 0.8 ? '白（無彩色）' : '灰（無彩色）';
+    if (!a || !b) return (a || b).w;
+    const [hi, lo] = a.m >= b.m ? [a, b] : [b, a];
+    return hi.w + '＋' + (lo.m < hi.m * 0.5 ? 'やや' : '') + lo.w;
+  }
+  function why({ rg, yb }) {
+    const p = [];
+    p.push(Math.abs(rg) < T_RG ? 'L と M がつり合い' : rg > 0 ? 'L が M より強く' : 'M が L より強く');
+    p.push(Math.abs(yb) < T_YB ? 'S と L＋M もつり合う' : yb > 0 ? 'S が相対的に強い' : 'S が相対的に弱い');
+    return p.join('、') + '。';
+  }
+
+  // ---- opponent wheel ----
+  const wheel = $('wheel'), wctx = wheel.getContext('2d');
+  const WS = wheel.width, WR = WS / 2 - 4;
+  const base = document.createElement('canvas'); base.width = base.height = WS;
+  (function paintBase() {
+    const b = base.getContext('2d'), img = b.createImageData(WS, WS), d = img.data, lum = 0.5;
+    for (let y = 0; y < WS; y++) for (let x = 0; x < WS; x++) {
+      const dx = (x - WS / 2) / WR, dy = (y - WS / 2) / WR, r = Math.hypot(dx, dy);
+      if (r > 1.01) continue;
+      const rg = dx / K, yb = dy;
+      const n0 = lum + rg / 2, n1 = lum - rg / 2, n2 = lum + yb;
+      let rgb = toRGB(n0 * WHITE[0], n1 * WHITE[1], n2 * WHITE[2]).map(v => Math.max(0, v));
+      const mx = Math.max(...rgb, 1e-6); if (mx > 1) rgb = rgb.map(v => v / mx);
+      const i = (y * WS + x) * 4;
+      d[i] = encByte(rgb[0]); d[i + 1] = encByte(rgb[1]); d[i + 2] = encByte(rgb[2]);
+      d[i + 3] = Math.round(255 * Math.max(0, Math.min(1, (1.01 - r) * 120)));
+    }
+    b.putImageData(img, 0, 0);
+    b.strokeStyle = 'rgba(0,0,0,.55)'; b.lineWidth = 2;
+    b.beginPath(); b.moveTo(WS / 2, 4); b.lineTo(WS / 2, WS - 4); b.moveTo(4, WS / 2); b.lineTo(WS - 4, WS / 2); b.stroke();
+    // reference marks for C-type
+    const refs = [['R', 1, 0, 0], ['G', 0, 1, 0], ['B', 0, 0, 1], ['Y', 1, 1, 0], ['C', 0, 1, 1], ['M', 1, 0, 1]];
+    b.font = '700 22px "BIZ UDGothic", monospace'; b.textAlign = 'center'; b.textBaseline = 'middle';
+    refs.forEach(([k, r, g, bl]) => {
+      const c = channels(toLMS(r, g, bl));
+      const [x, y] = wpos(c);
+      b.fillStyle = 'rgba(0,0,0,.6)'; b.beginPath(); b.arc(x, y, 15, 0, Math.PI * 2); b.fill();
+      b.fillStyle = '#fff'; b.fillText(k, x, y + 1);
+    });
+  })();
+  function wpos({ rg, yb }) {
+    let x = rg * K, y = yb; const r = Math.hypot(x, y);
+    if (r > 0.97) { x *= 0.97 / r; y *= 0.97 / r; }
+    return [WS / 2 + x * WR, WS / 2 + y * WR];
+  }
+  function drawWheel(ch) {
+    wctx.clearRect(0, 0, WS, WS);
+    wctx.drawImage(base, 0, 0);
+    if (ch.lum < 0.01) return;
+    const [x, y] = wpos(ch);
+    wctx.strokeStyle = '#fff'; wctx.lineWidth = 4;
+    wctx.beginPath(); wctx.moveTo(WS / 2, WS / 2); wctx.lineTo(x, y); wctx.stroke();
+    wctx.strokeStyle = '#111'; wctx.lineWidth = 2;
+    wctx.beginPath(); wctx.moveTo(WS / 2, WS / 2); wctx.lineTo(x, y); wctx.stroke();
+    wctx.fillStyle = '#111'; wctx.beginPath(); wctx.arc(x, y, 17, 0, Math.PI * 2); wctx.fill();
+    wctx.fillStyle = '#fff'; wctx.beginPath(); wctx.arc(x, y, 13, 0, Math.PI * 2); wctx.fill();
+    wctx.fillStyle = $('swatch').style.backgroundColor; wctx.beginPath(); wctx.arc(x, y, 9, 0, Math.PI * 2); wctx.fill();
+  }
+
+  // ---- interaction ----
+  const toLogical = e => {
+    const r = stage.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W0, y: (e.clientY - r.top) / r.height * H0 };
+  };
+  let drag = null;
+  stage.addEventListener('pointerdown', e => {
+    const p = toLogical(e);
+    if (Math.hypot(p.x - probe.x, p.y - probe.y) < 22) drag = { t: probe, ox: probe.x - p.x, oy: probe.y - p.y, probe: true };
+    else for (let i = circles.length - 1; i >= 0; i--) {
+      const c = circles[i];
+      if (Math.hypot(p.x - c.x, p.y - c.y) < RAD) { drag = { t: c, ox: c.x - p.x, oy: c.y - p.y }; break; }
+    }
+    if (!drag) { probe.x = p.x; probe.y = p.y; drag = { t: probe, ox: 0, oy: 0, probe: true }; }
+    stage.setPointerCapture(e.pointerId); stage.classList.add('dragging');
+    setActive(null); draw();
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = toLogical(e);
+    drag.t.x = Math.max(4, Math.min(W0 - 4, p.x + drag.ox));
+    drag.t.y = Math.max(4, Math.min(H0 - 4, p.y + drag.oy));
+    draw();
+  });
+  const end = () => { drag = null; stage.classList.remove('dragging'); };
+  stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  stage.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 20 : 6, m = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    if (!m) return;
+    e.preventDefault();
+    probe.x = Math.max(4, Math.min(W0 - 4, probe.x + m[0]));
+    probe.y = Math.max(4, Math.min(H0 - 4, probe.y + m[1]));
+    setActive(null); draw();
+  });
+
+  ['R', 'G', 'B'].forEach((k, i) => {
+    const s = $('s' + k);
+    s.addEventListener('input', () => { I[i] = s.value / 100; $('o' + k).textContent = s.value + '%'; draw(); });
+    I[i] = s.value / 100; $('o' + k).textContent = s.value + '%';
+  });
+
+  // place the probe in the region lit by exactly this set of lights
+  function placeProbe(set) {
+    let best = null, bestScore = -Infinity;
+    for (let y = 8; y < H0; y += 4) for (let x = 8; x < W0; x += 4) {
+      let score = Infinity;
+      circles.forEach(c => {
+        const d = Math.hypot(x - c.x, y - c.y);
+        score = Math.min(score, set.includes(c.key) ? RAD * 0.84 - d : d - RAD);
+      });
+      if (score > bestScore) { bestScore = score; best = [x, y]; }
+    }
+    probe.x = best[0]; probe.y = best[1];
+  }
+  function setActive(set) {
+    activeSet = set;
+    document.querySelectorAll('#regions button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.set === set)));
+  }
+  const goto = set => { placeProbe(set); setActive(set); draw(); };
+  document.querySelectorAll('#regions button').forEach(b => b.addEventListener('click', () => goto(b.dataset.set)));
+  document.querySelectorAll('[data-goto]').forEach(b => b.addEventListener('click', () => { goto(b.dataset.goto); $('stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); }));
+
+  const setMode = m => {
+    mode = m;
+    document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+    draw();
+  };
+  document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('[data-mode-go]').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.modeGo); goto('R'); $('modes').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+
+  const ageInput = $('age');
+  const setAge = a => {
+    age = a; AGE_F = ageFactors(a);
+    ageInput.value = a; $('oAge').textContent = a + '歳';
+    draw();
+  };
+  ageInput.addEventListener('input', () => setAge(+ageInput.value));
+  document.querySelectorAll('[data-age-go]').forEach(b => b.addEventListener('click', () => { setMode('C'); setAge(+b.dataset.ageGo); goto('B'); $('modes').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+  age = +ageInput.value; AGE_F = ageFactors(age); $('oAge').textContent = age + '歳';
+
+  placeProbe(activeSet);
+  draw();
+  if (document.fonts) document.fonts.ready.then(draw);
+})();
+</script>
