@@ -98,7 +98,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .toolbar, .stage { scroll-margin-top: 76px; }
 .intro { display: flex; flex-direction: column; gap: 8px; }
 .eyebrow { font-size: var(--fs-note); letter-spacing: .06em; color: var(--accent); font-weight: 700; }
-h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 4.2vw, 40px); line-height: 1.25; margin: 0; text-wrap: balance; }
+h1 { font-family: var(--font-body); font-weight: 700; font-size: clamp(24px, 3.2vw, 32px); line-height: 1.35; letter-spacing: .02em; margin: 0; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); }
 
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
@@ -213,8 +213,8 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
 .dlg { display: flex; flex-direction: column; max-height: min(86vh, 900px); }
 .dlg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
 .dlg-body { overflow-y: auto; padding: 18px 20px 22px; overscroll-behavior: contain; }
-.notes h2 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 4px; }
-.dlg-head p { margin: 0; color: var(--muted); max-width: 64ch; }
+.notes h2 { font-family: var(--font-body); font-weight: 700; font-size: 22px; letter-spacing: .02em; margin: 0 0 4px; }
+.dlg-head p { margin: 0; color: var(--muted); }
 .close {
   font: inherit; font-size: var(--fs-note); font-weight: 700; color: var(--ink); background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; flex-shrink: 0;
@@ -227,7 +227,7 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
 .card p { margin: 0; font-size: var(--fs-body); }
 .card ul { margin: 0; padding-left: 1.2em; font-size: var(--fs-body); }
 .card button.link { font: inherit; font-size: var(--fs-note); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
-.foot { font-size: var(--fs-note); color: var(--muted); max-width: 80ch; margin: 0; }
+.foot { font-size: var(--fs-note); color: var(--muted); margin: 0; }
 
 @media (prefers-reduced-motion: reduce) { .bar i, .needle, .swatch { transition: none; } }
 </style>
@@ -341,7 +341,7 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
    <div class="dlg">
     <div class="dlg-head">
       <div>
-        <h2 id="h-notes">UCアドバイザーの読み解き</h2>
+        <h2 id="h-notes">このラボの読み解き</h2>
         <p>試験で問われやすい点と、このラボのどこを触れば確かめられるかをまとめています。</p>
       </div>
       <button type="button" class="close" id="notesClose">閉じる</button>
