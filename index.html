@@ -54,13 +54,26 @@ body {
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.7;
-  padding-block: 28px 56px;
+  padding-block: 0 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
 
-header { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+.site {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-block: 14px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+.brand { font-family: var(--font-display); font-size: 18px; line-height: 1.3; margin: 0; }
+.nav-link {
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--accent); background: none; border: 0; padding: 4px 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+}
+.nav-link:hover { text-decoration-thickness: 2px; }
+.toolbar, .stage { scroll-margin-top: 76px; }
+.intro { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
 .eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 4.2vw, 40px); line-height: 1.25; margin: 0; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); max-width: 62ch; }
@@ -169,8 +182,21 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 .wheel-cap { font-size: 12px; color: var(--muted); margin: 0; text-align: center; }
 
 /* notes */
+dialog.notes {
+  padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink);
+  width: min(980px, calc(100% - 32px)); max-width: none; max-height: min(86vh, 900px); overflow: hidden;
+}
+dialog.notes::backdrop { background: rgba(10, 13, 20, .55); backdrop-filter: blur(2px); }
+.dlg { display: flex; flex-direction: column; max-height: min(86vh, 900px); }
+.dlg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+.dlg-body { overflow-y: auto; padding: 18px 20px 22px; overscroll-behavior: contain; }
 .notes h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0 0 4px; }
-.notes > p { margin: 0 0 14px; color: var(--muted); max-width: 64ch; }
+.dlg-head p { margin: 0; color: var(--muted); max-width: 64ch; }
+.close {
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; flex-shrink: 0;
+}
+.close:hover { border-color: var(--ink); }
 .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
 .card .kw { font-size: 11px; letter-spacing: .12em; color: var(--accent); font-weight: 700; }
@@ -184,11 +210,16 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 </style>
 
 <div class="wrap">
-  <header>
+  <header class="site">
+    <p class="brand">光と反対色ラボ</p>
+    <button type="button" class="nav-link" id="openNotes" aria-haspopup="dialog">このラボの読み解き</button>
+  </header>
+
+  <div class="intro">
     <span class="eyebrow">色彩検定 UC級 ／ 加法混色・反対色説・色覚の多様性</span>
     <h1>光を重ねると、目の中で何が起きているか</h1>
     <p class="lede">赤・緑・青の光を重ねて、観察点（白い照準）を動かしてください。その光に対する L・M・S 錐体の反応と、そこから作られる 3 つの反対色チャンネル、最終的に見える色が同時に変わります。</p>
-  </header>
+  </div>
 
   <div class="toolbar">
     <span class="label">色覚タイプ</span>
@@ -283,9 +314,16 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
     </section>
   </main>
 
-  <section class="notes" aria-labelledby="h-notes">
-    <h2 id="h-notes">UCアドバイザーの読み解き</h2>
-    <p>試験で問われやすい点と、このラボのどこを触れば確かめられるかをまとめています。</p>
+  <dialog class="notes" id="notes" aria-labelledby="h-notes">
+   <div class="dlg">
+    <div class="dlg-head">
+      <div>
+        <h2 id="h-notes">UCアドバイザーの読み解き</h2>
+        <p>試験で問われやすい点と、このラボのどこを触れば確かめられるかをまとめています。</p>
+      </div>
+      <button type="button" class="close" id="notesClose">閉じる</button>
+    </div>
+    <div class="dlg-body">
     <div class="cards">
       <article class="card">
         <span class="kw">加法混色</span>
@@ -328,7 +366,9 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
         <button type="button" class="link" data-age-go="80">80歳にして青の光を見る</button>
       </article>
     </div>
-  </section>
+    </div>
+   </div>
+  </dialog>
 
   <p class="foot">モデルについて：錐体反応は表示色（sRGB）から LMS への変換（Smith–Pokorny 系の行列）、色覚シミュレーションは Viénot・Brettel・Mollon（1999）の近似を使っています。加齢の効果は、水晶体と黄斑色素による吸収が増える分を、20歳を基準にした L・M・S ごとの透過率（80歳で S が約 4 割）として目安で入れたもので、順応はかけていません。チャンネルは白で L＝M＝S＝1 となるよう正規化し、明るさは (L＋M)/2、黄－青は S−(L＋M)/2 として計算しました。学習用の簡略モデルなので、実際の見え方には個人差があります。</p>
 </div>
@@ -654,6 +694,13 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
   };
   document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
   document.querySelectorAll('[data-mode-go]').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.modeGo); goto('R'); $('modes').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+
+  // notes modal: closes on the close button, a click on the backdrop, or any link inside a card
+  const dlg = $('notes');
+  $('openNotes').addEventListener('click', () => dlg.showModal());
+  $('notesClose').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('click', e => { if (e.target.closest('button.link')) dlg.close(); }, true);
 
   const ageInput = $('age');
   const setAge = a => {
