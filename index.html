@@ -415,7 +415,7 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
           <li>明度：明るさのチャンネル（L＋M）</li>
         </ul>
         <p>連続した色は最後に「赤」「青」のような色名のカテゴリーに分けられます。多くの言語に共通する基本色彩語は 11 語（白・黒・赤・緑・黄・青・茶・紫・ピンク・オレンジ・灰）。カテゴリーの境目をまたぐ色の差は見分けやすく、これをカテゴリカル知覚と呼びます。色覚が異なる人と情報を共有するときに色名を添えるのは、このカテゴリーが共通の手がかりになるからです。</p>
-        <button type="button" class="link" data-goto="GB">緑＋青（水色）に照準を置く</button>
+        <button type="button" class="link" data-goto="GB">緑＋青（青緑）に照準を置く</button>
       </article>
       <article class="card">
         <span class="kw">色覚の多様性</span>
@@ -668,13 +668,13 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     return t < 0.5 ? `${b}寄りの${a}` : `${a}寄りの${b}`;
   }
   // sectors calibrated so the display primaries land in the expected names
-  // (R≈18°, Y≈79°, G≈121°, C≈198°, B≈259°, M≈301°)
+  // (R≈18°, Y≈79°, G≈121°, C≈198° 青緑, B≈259°, M≈301°)
   const ACHRO = 0.08;
   const SECTORS = [
     [32, '赤'], [62, '橙'], [98, '黄'], [115, '黄緑'], [175, '緑'],
-    [210, '青緑'], [275, '青'], [300, '紫'], [345, '赤紫'], [360, '赤'],
+    [210, '青緑'], [265, '青'], [282, '青紫'], [300, '紫'], [345, '赤紫'], [360, '赤'],
   ];
-  const BORDER = { '黄緑': '緑と黄の境目', '青緑': '緑と青の境目', '赤紫': '紫とピンクの境目' };
+  const BORDER = { '黄緑': '緑と黄の境目', '青緑': '緑と青の境目', '青紫': '青と紫の境目', '赤紫': '紫とピンクの境目' };
   function categorize(hue, rad, V, dark) {
     const basic = n => ({ name: n, note: `基本色彩語（11語）の「${n}」に入る色` });
     if (dark || V < 1.5) return basic('黒');
@@ -682,7 +682,7 @@ dialog.notes::backdrop { background: rgba(10, 13, 20, .55); -webkit-backdrop-fil
     let n = SECTORS.find(s => hue < s[0])[1];
     if ((n === '橙' || n === '黄') && V < 4.5) return basic('茶');
     if ((n === '赤' || n === '赤紫') && V >= 7 && rad < 0.35) return basic('ピンク');
-    if ((n === '青緑' || n === '青') && V >= 7) return { name: '水色', note: '基本色彩語では「青」の仲間。日本語では独立した色名として使われることが多い' };
+    if (n === '青' && V >= 7) return { name: '水色', note: '基本色彩語では「青」の仲間。日本語では独立した色名として使われることが多い' };
     const pre = V < 3 ? '暗い' : rad < 0.18 ? (V >= 6 ? 'うすい' : '灰みの') : '';
     if (BORDER[n]) return { name: pre + n, note: `基本色彩語では${BORDER[n]}。境目をまたぐ色の差は見分けやすい（カテゴリカル知覚）` };
     return { name: pre + n, note: `基本色彩語（11語）の「${n === '橙' ? 'オレンジ' : n}」に入る色` };
